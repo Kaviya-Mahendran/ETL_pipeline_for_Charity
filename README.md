@@ -1,67 +1,177 @@
 # ETL_pipeline_for_Charity
-Built an ETL pipeline that cleans, standardises, and merges supporter data (donations, events, campaigns) into one analytics-ready dataset.
 
-**Project Title:**  **Charity Data ETL Pipeline**
-**Overview**
-This project showcases a complete Extract, Transform, and Load (ETL) pipeline built with Python to process raw, messy data from a fictional charity organization. The goal was to clean, merge, and transform data from three separate sources—donations, events, and campaigns—into a single, unified dataset ready for analytics.
+**A. Project Overview**
 
-This project uses sample data for demonstration purposes, ensuring full compliance with GDPR and other data privacy regulations.
+This repository demonstrates a complete Extract–Transform–Load (ETL) pipeline built in Python that ingests raw charity data from web sources, cleans and validates it, and outputs structured datasets ready for analytics. The goal is to turn messy, inconsistent data into reliable, analysis-ready tables that power dashboards, segmentation, or modelling.
 
-**Data Sources**
-The pipeline processes data from three separate CSV files, each with its own data quality challenges:
+Rather than ad hoc scripting, this project treats data preparation as a disciplined, systemised workflow. Each stage is designed to be repeatable, transparent, and easy to maintain — essential traits for any analytics environment that aims for trust and continuity.
 
-donations.csv: Contains donation amounts, dates, and campaign IDs. It has inconsistent data formats and duplicated supporter_id columns.
+Although implementations vary across organisations, these principles apply broadly to most data analytics environments.
 
-events.csv: Records supporter participation in events. It has inconsistent supporter ID column names (user_id and User ID) and various date formats.
+**B. System Architecture Diagram**
 
-campaigns.csv: Provides details about each fundraising campaign. This file has inconsistent date formats and trailing whitespace in text fields.
+This ETL pipeline is organised into clear functional blocks:
 
-**ETL Process & Key Challenges**
-The Python script etl_pipeline.py performs the following steps:
+Raw Web Source Data
+         ↓
+Python Extraction Scripts
+(requests + BeautifulSoup / API)
+         ↓
+Raw Staging (CSV / Intermediate)
+         ↓
+Cleaning & Validation
+(pandas + custom logic)
+         ↓
+Analytics-Ready Output
+        (CSV / Data Warehouse)
+         ↓
+Analysis / Dashboards / Reports
 
-Extract: The script reads the three CSV files into pandas DataFrames.
 
-Transform: This is the core of the project. I implemented logic to handle several real-world data issues:
+This architectural separation supports:
 
-Inconsistent Column Names: Standardized Supporter ID, user_id, and User ID into a single, consistent supporter_id column for seamless merging.
+pipeline ownership
 
-Missing and Inconsistent Data: Cleaned up the donation_amount column by filling in missing values with 0.
+stage-wise validation
 
-Mixed Data Types: Standardized all date columns (e.g., donation_date, event_date) to a unified YYYY-MM-DD format, handling multiple input formats gracefully.
+easier debugging
 
-Merging Datasets: Performed a LEFT JOIN on the DataFrames using a common key (supporter_id) to create a comprehensive table that links donations and event participation to specific campaigns.
+reuse across domains
 
-Load: The final, cleaned DataFrame is loaded into two different destinations to show versatility:
+**C. Step-by-Step Workflow Explanation**
+**Step 1: Extract — Collecting Raw Data**
 
-analytics_ready_data.csv: A clean CSV file that can be easily shared or used in a spreadsheet program.
+The first phase uses Python to pull raw data from publicly accessible web pages or APIs. It handles:
 
-charity_data.db: A SQLite database, demonstrating the ability to load data into a structured database for SQL-based analysis.
+HTML parsing via BeautifulSoup
 
-**Tools & Technologies**
+HTTP requests with retries and error handling
 
-Python: The primary language for the ETL script.
+capturing relevant fields while preserving context
 
-Pandas: Used for all data manipulation, cleaning, and transformation tasks.
+Example snippet:
 
-SQLAlchemy: Used to establish a connection and load the data into the SQLite database.
+import requests
+from bs4 import BeautifulSoup
 
-Git & GitHub: Used for version control and project hosting.
+response = requests.get(source_url)
+soup = BeautifulSoup(response.text, "html.parser")
 
-**How to Run the Project**
+entries = soup.find_all("div", class_="entry")
 
-Clone the repository to your local machine:
-git clone https://github.com/Kaviya-Mahendran/ETL_pipeline_for_Charity.git
 
-Navigate to the project directory.
+The goal of this step is comprehensive capture, not cleaning.
 
-Create and activate a virtual environment:
-python3 -m venv venv
-source venv/bin/activate
+**Step 2: Transform — Cleaning & Standardisation**
+Once data is captured, the pipeline moves into transformation. This stage is essential because raw data is rarely consistent or analysis-ready.
 
-**Install the required libraries:**
-pip install -r requirements.txt (Note: You can create this file by running pip freeze > requirements.txt)
+Key activities include:
 
-Run the ETL pipeline:
-python3 etl_pipeline.py
+Missing data handling
 
-The script will generate analytics_ready_data.csv and charity_data.db in the project folder.
+Type standardisation
+
+Inconsistent value harmonisation
+
+Filtering out irrelevant records
+
+Example cleaning rule:
+
+df["charity_name"] = df["charity_name"].str.strip().fillna("Unknown")
+df["founded_year"] = pd.to_numeric(df["founded_year"], errors="coerce")
+
+
+Rather than silently fixing issues, this transformation makes assumptions explicit and auditable.
+
+**Step 3: Load — Writing Structured Outputs**
+After cleaning, the pipeline writes structured, consistent tables to CSV or a destination database. This output serves as a dependable input for:
+
+dashboards
+
+SQL analytics
+
+machine learning models
+
+Example:
+
+df.to_csv("charity_data_cleaned.csv", index=False)
+
+
+This structured dataset is the product of the pipeline — not an intermediate convenience.
+
+**Step 4: Prepare for Analytics**
+The final output is designed so analysts can use it immediately without further ad hoc cleaning. It supports:
+
+segmentation
+
+trend analysis
+
+text analytics
+
+KPI evaluation
+
+This makes the pipeline more than an ETL — it’s a data-to-insight enabler.
+
+**D. Why This Matters**
+Reducing Manual Work
+
+Before pipelines like this, analysts often handled extraction, cleaning, and transformation manually in spreadsheets or one-off scripts. This pipeline automates those repetitive tasks, freeing time for interpretation and insight.
+
+Enabling Better Decisions
+
+Clean, structured data improves the reliability of analytical products — dashboards, models, and reports — which in turn supports better decisions about:
+
+where to allocate resources
+
+how to prioritise strategic initiatives
+
+what patterns signal emerging issues
+
+For nonprofit and mission-driven teams, this translates into more effective operations without increasing costs.
+
+Innovation Beyond Routine
+
+This pipeline demonstrates how deliberate engineering discipline transforms messy data into a dependable foundation for analytics. It shows that repeatable processes — not isolated scripts — make analytics sustainable.
+
+Although implementations vary across organisations, these principles apply broadly to most data analytics environments.
+
+**E. Reflection & Learnings**
+
+Building this ETL pipeline underscored a fundamental truth: data doesn’t become valuable until it’s structured and dependable.
+
+Some key learnings include:
+
+Pipeline architecture matters. Separating extraction, transformation, and loading clarifies ownership and simplifies troubleshooting.
+
+Making assumptions explicit is critical. When logic is hidden in scripts, it’s fragile; when it’s expressed as code, it becomes auditable and reusable.
+
+Analytics-ready outputs reduce downstream friction. Analysts spend more time interpreting patterns and less time fixing quirks.
+
+From a leadership perspective, this project shows a shift from ad hoc analysis toward engineering analytics capability. It reflects the mindset that analytics outputs are not episodic artefacts, but part of an ongoing system that others depend on.
+
+For analysts, the key takeaway is to design ETL pipelines as living assets — reusable, transparent, and aligned with decision needs.
+
+**How to Use This Repository**
+
+Clone the repository:
+
+git clone https://github.com/Kaviya-Mahendran/ETL_pipeline_for_Charity
+
+
+Install dependencies:
+
+pip install -r requirements.txt
+
+
+Run the ETL script:
+
+python run_etl_pipeline.py
+
+
+Find your cleaned, structured outputs in output/
+
+Use those files for analysis, BI dashboards, or further modelling.
+
+Final Note
+
+This repository is intentionally designed not as a one-off solution, but as a foundation for responsible, scalable data workflows. It reflects a discipline where data preparation is not an afterthought, but the bedrock of reliable analytics.
